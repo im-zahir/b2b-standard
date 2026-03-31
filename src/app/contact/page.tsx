@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import emailjs from "@emailjs/browser";
+import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
 import styles from "./Contact.module.css";
@@ -19,7 +20,7 @@ export default function ContactPage() {
     message: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
@@ -36,17 +37,29 @@ export default function ContactPage() {
       return;
     }
 
-    emailjs.sendForm(serviceId, templateId, form.current!, publicKey)
-      .then((result) => {
-          console.log("Email sent successfully:", result.text);
-          setSuccess(true);
-          setLoading(false);
-          setFormData({ user_name: "", user_email: "", user_company: "", message: "" });
-      }, (error) => {
-          console.error("EmailJS Error:", error.text);
-          setError(true);
-          setLoading(false);
+    try {
+      // 1. Save to Supabase for Admin Lead Management
+      const { error: dbError } = await supabase.from("inquiries").insert({
+        user_name: formData.user_name,
+        user_email: formData.user_email,
+        user_company: formData.user_company,
+        message: formData.message
       });
+
+      if (dbError) console.error("Database save failed, continuing with email...", dbError);
+
+      // 2. Transmit via EmailJS for instant notification
+      const result = await emailjs.sendForm(serviceId, templateId, form.current!, publicKey);
+      
+      console.log("Email sent successfully:", result.text);
+      setSuccess(true);
+      setLoading(false);
+      setFormData({ user_name: "", user_email: "", user_company: "", message: "" });
+    } catch (err) {
+      console.error("Transmission Error:", err);
+      setError(true);
+      setLoading(false);
+    }
   };
 
   return (

@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
+import MaintenanceWrapper from "@/components/common/MaintenanceWrapper";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body style={{ fontFamily: "var(--font-inter)" }}>
-        {children}
+        <MaintenanceWrapper>
+          {children}
+        </MaintenanceWrapper>
       </body>
     </html>
   );
